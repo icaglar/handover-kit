@@ -1,5 +1,5 @@
 {
-  "description": "Handover: starts the handover at a context threshold, pauses auto-compaction once if there is no fresh note, and restores the note after compaction or /clear.",
+  "description": "Handover: starts the handover at a context threshold, pauses auto-compaction once if there is no fresh note, restores the note after compaction or /clear, and loads the project knowledge index in every session.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -31,6 +31,16 @@
           {
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"${CLAUDE_PLUGIN_ROOT}/scripts/restore_note.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"${CLAUDE_PLUGIN_ROOT}/scripts/knowledge_index.py\"",
             "timeout": 10
           }
         ]

@@ -4,7 +4,7 @@ Context and state management tools for Claude Code. This repository is a Claude 
 
 | Plugin | Description |
 |---|---|
-| [`handover`](plugins/handover/README.md) | Handover notes before the context fills up: starts the handover at a threshold, asks about state before writing, captures the rules you set into `.claude/rules`, and restores the note after compaction or `/clear` |
+| [`handover`](plugins/handover/README.md) | Handover notes and memory management: starts the handover at a context threshold, asks about state before writing, captures rules and durable project knowledge, restores the note after compaction or `/clear`, and audits all memory layers |
 
 ## Quick install
 
@@ -27,6 +27,8 @@ handover-kit/
     └── skills/
         ├── write/SKILL.md              # /handover:write
         ├── rule/SKILL.md               # /handover:rule
+        ├── learn/SKILL.md              # /handover:learn
+        ├── tidy/SKILL.md               # /handover:tidy
         └── resume/SKILL.md             # /handover:resume
 ```
 

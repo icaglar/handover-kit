@@ -12,6 +12,7 @@ Rules the user states in the middle of a conversation get lost when the context 
 - **The user explicitly asks** ("make this a rule", "from now on always ..."): that is consent. Write the rule, then show exactly what was written and where. Ask first only if the wording or scope is genuinely unclear.
 - **The user corrected the same thing twice:** offer in one line ("Want me to make this a permanent rule?"). Write nothing unless they say yes.
 - **A one-off instruction for the current task** ("don't touch the tests in this PR") is not a permanent rule. It belongs in the handover note's constraints section, not here.
+- **A fact or decision about the project** ("we chose Postgres because…", "staging runs on port 8443") is not a rule either. It is project knowledge; use `/handover:learn`.
 
 ## 1. Word the rule
 

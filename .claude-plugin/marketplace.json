@@ -10,7 +10,7 @@
     {
       "name": "handover",
       "source": "./plugins/handover",
-      "description": "Handover notes before the context fills up: starts the handover at a threshold, asks about state before writing, captures the rules you set into .claude/rules, and restores the note after compaction or /clear.",
+      "description": "Handover notes and memory management for Claude Code: starts the handover at a context threshold, asks about state before writing, captures rules and durable project knowledge, restores the note after compaction or /clear, and audits all memory layers for duplicates, contradictions, and stale entries.",
       "category": "productivity"
     }
   ]

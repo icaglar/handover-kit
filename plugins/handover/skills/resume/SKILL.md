@@ -14,5 +14,6 @@ Talk to the user in the language they are using in this conversation.
    - Is the current branch the one in the note? If not, stop and ask the user.
    - Do `git status` and recent commits contradict the note? List any contradictions; the current files win.
    - If the note is older than 7 days, say so explicitly.
-3. **Summarize.** A status summary of at most 5 lines, plus the first next step.
-4. **Get confirmation.** If open questions block the first step, ask them first. Otherwise, ask the user to confirm before starting the first step.
+3. **Load relevant knowledge.** If the project knowledge index (`.claude/knowledge/INDEX.md`, already in your context when it exists) lists topic files related to the first next step, read them before proposing it.
+4. **Summarize.** A status summary of at most 5 lines, plus the first next step.
+5. **Get confirmation.** If open questions block the first step, ask them first. Otherwise, ask the user to confirm before starting the first step.

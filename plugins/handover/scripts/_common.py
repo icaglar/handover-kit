@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 NOTE_PATH = ".claude/HANDOVER.md"
+KNOWLEDGE_INDEX = ".claude/knowledge/INDEX.md"
 
 
 def setting(key: str, default: float) -> float:

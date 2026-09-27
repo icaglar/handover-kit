@@ -1,17 +1,19 @@
 # Handover — a Claude Code plugin
 
-Gets a handover note written before the context fills up, asks you about state before writing it, captures the rules you set during a session into `.claude/rules/`, and restores the note automatically after compaction or `/clear`.
+Gets a handover note written before the context fills up, asks you about state before writing it, captures the rules and durable project knowledge from each session, restores the note automatically after compaction or `/clear`, and keeps every memory layer clean.
 
 | Part | When it runs | What it does |
 |---|---|---|
-| `/handover:write` | Manually, or after the threshold note | Asks up to 5 questions about state first (including which of the rules you set should become permanent), then saves confirmed rules and writes `.claude/HANDOVER.md` from a fixed template |
+| `/handover:write` | Manually, or after the threshold note | Asks up to 5 questions about state first (including which rules and knowledge from the session to keep), then saves what you confirmed and writes `.claude/HANDOVER.md` from a fixed template |
 | `/handover:rule` | Whenever you say "make this a rule" | Saves a single rule to `.claude/rules/` right away, after checking for duplicates and conflicts |
+| `/handover:learn` | Whenever you say "save this decision" or "note this for the project" | Saves a single fact or decision to the shared knowledge base in `.claude/knowledge/` |
+| `/handover:tidy` | When memory feels messy, or monthly | Audits all memory layers and fixes what you approve |
 | `/handover:resume` | Manually, in a new session | Reads the note, checks it against git state, and asks you to confirm the first step |
 | Threshold hook | On every prompt | Once the context passes the threshold (70% by default), adds a note so Claude starts the handover. Fires once per fill cycle |
 | PreCompact hook | Before auto-compaction | If there is no fresh note, pauses compaction **once** and allows the next attempt |
-| SessionStart hook | After compaction and `/clear` | Loads the handover note, with its age, into the new context |
+| SessionStart hooks | Every session start, plus after compaction and `/clear` | Loads the project knowledge index in every session, and the handover note (with its age) after compaction or `/clear` |
 
-Hooks add no standing load to the model context; the three skill descriptions add roughly 370 tokens per session. Requirement: Python 3.8+ on PATH as `python3` or `python`. No third-party packages.
+Hooks add no standing load to the model context; the five skill descriptions add roughly 690 tokens per session, plus the knowledge index once you have one (capped at 60 lines). Requirement: Python 3.8+ on PATH as `python3` or `python`. No third-party packages.
 
 ## Why
 
@@ -34,6 +36,24 @@ Where rules go:
 | All your projects | `~/.claude/rules/handover-rules.md` (never path-scoped: Claude Code currently ignores `paths` in user-level rules) |
 
 Rule files are plain markdown; edit or delete rules freely. Commit `.claude/rules/` if the rules should apply to your whole team.
+
+## Memory
+
+Claude Code already has its own memory, auto memory: notes Claude writes for itself, stored on your machine. The plugin does not add a second copy of that. It manages the layers around it, and adds the one that was missing: shared project knowledge.
+
+| Layer | Holds | File | Loads |
+|---|---|---|---|
+| State | Where the current work stands | `.claude/HANDOVER.md` | After compaction or `/clear` |
+| Rules | How to work ("always…", "never…") | `.claude/rules/` | Every session |
+| **Knowledge** | What is true about the project, and why | `.claude/knowledge/` | Index every session, details on demand |
+| Auto memory | Claude's personal notes about working with you | `~/.claude/projects/<project>/memory/` | Managed by Claude Code |
+| CLAUDE.md | Project overview, commands | `CLAUDE.md` | Every session |
+
+**Project knowledge.** Decisions and what you learn about a project usually sit in the handover note until the work is done, and are then pruned away. `/handover:write` now asks which of them to keep, and `/handover:learn` saves one on the spot. They go to `.claude/knowledge/`: decisions in `decisions.md` with their reasons (a reversed decision is marked superseded, not deleted, so the history of why stays), facts in topic files such as `architecture.md`, `environments.md`, and `gotchas.md`. Only the short `INDEX.md` loads in every session; Claude opens the topic files when they are relevant. Unlike auto memory, this directory is committed, so your whole team starts from the same knowledge.
+
+**Never put secrets or personal data in it.** The skills refuse to store passwords, keys, tokens, or credentials, and record where a secret lives instead; `/handover:tidy` flags any that slipped in.
+
+**Tidy.** Memory fails quietly as it grows: the same fact in three places, two files that contradict each other, a reversed decision that still loads, a `MEMORY.md` past the 200 lines that actually get loaded. `/handover:tidy` reads every layer at once, reports duplicates, contradictions, stale and misplaced entries, secrets, size problems, and broken rule frontmatter, and applies only the changes you approve. Contradictions are always left for you to decide.
 
 ## Install
 
@@ -107,6 +127,8 @@ If you have a claude.ai organization, an admin can also add the plugin to the or
 3. **Rule:** say "make this a rule: ...". It should appear in `.claude/rules/handover-rules.md`; run `/memory` in a new session to see it loaded.
 4. **Restore:** after the note is written, run `/clear` and ask "what does the handover note say?". The note should be in context.
 5. **Resume:** in a new session, run `/handover:resume`. Claude should check git state against the note and ask you to confirm the first step.
+6. **Knowledge:** say "save this decision: we use X because Y". It should appear in `.claude/knowledge/decisions.md` and in `INDEX.md`; in a new session, ask "what do you know about this project's decisions?".
+7. **Tidy:** run `/handover:tidy`. You should get a numbered report, and nothing should change until you approve.
 
 ## Suggested CLAUDE.md addition
 
@@ -119,11 +141,12 @@ were tried and dropped, changed files, open questions, the next step, and
 rules the user set. See .claude/HANDOVER.md for details.
 ```
 
-If the handover note is a personal working note, add `.claude/HANDOVER.md` to `.gitignore`. If your team shares it, commit it.
+If the handover note is a personal working note, add `.claude/HANDOVER.md` to `.gitignore`. If your team shares it, commit it. Commit `.claude/knowledge/` so the whole team shares the project knowledge.
 
 ## Known limits
 
 - **Context usage is an estimate.** The threshold hook reads the last `usage` field in the session transcript. That field is not an official API contract; if a Claude Code update changes the format, the hook silently stops firing. It never errors and never blocks your prompt. If it stops triggering, this is the first place to look.
+- **The knowledge index is capped at 60 lines.** Lines past that are not loaded; the hook says so in context, and `/handover:tidy` helps consolidate.
 - **PreCompact pauses only once.** This is deliberate: if compaction were blocked every time while the context is completely full, the session would get stuck.
 - **Windows.** The hooks look for `python3`, then `python`. The Microsoft Store `python3` shortcut on Windows is not a real Python; if the hooks do nothing, turn that shortcut off under "App execution aliases" in Windows settings.
 
