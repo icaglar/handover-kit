@@ -1,0 +1,17 @@
+{
+  "name": "handover-kit",
+  "owner": {
+    "name": "İbrahim"
+  },
+  "metadata": {
+    "description": "Context and state management tools for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "handover",
+      "source": "./plugins/handover",
+      "description": "Handover notes before the context fills up: starts the handover at a threshold, asks about state before writing, captures the rules you set into .claude/rules, and restores the note after compaction or /clear.",
+      "category": "productivity"
+    }
+  ]
+}

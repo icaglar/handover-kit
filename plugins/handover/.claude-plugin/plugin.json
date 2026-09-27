@@ -1,0 +1,45 @@
+{
+  "name": "handover",
+  "displayName": "Handover",
+  "version": "0.1.0",
+  "description": "Handover notes before the context fills up: starts the handover at a threshold, asks about state before writing, captures the rules you set into .claude/rules, and restores the note after compaction or /clear.",
+  "author": {
+    "name": "İbrahim"
+  },
+  "license": "MIT",
+  "keywords": [
+    "handover",
+    "handoff",
+    "context",
+    "compaction",
+    "state",
+    "session",
+    "memory",
+    "rules"
+  ],
+  "userConfig": {
+    "threshold": {
+      "type": "number",
+      "title": "Handover threshold",
+      "description": "Offer a handover when the context is this full (0.7 = 70%).",
+      "default": 0.7,
+      "min": 0.3,
+      "max": 0.95
+    },
+    "window": {
+      "type": "number",
+      "title": "Context window (tokens)",
+      "description": "Context window of the model you use. Set to 1000000 for 1M-context models.",
+      "default": 200000,
+      "min": 50000
+    },
+    "fresh_minutes": {
+      "type": "number",
+      "title": "Note freshness (minutes)",
+      "description": "If the handover note is older than this when auto-compaction starts, compaction is paused once.",
+      "default": 30,
+      "min": 5,
+      "max": 240
+    }
+  }
+}
