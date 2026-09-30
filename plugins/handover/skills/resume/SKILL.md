@@ -11,9 +11,12 @@ Talk to the user in the language they are using in this conversation.
 
 1. **Read the note.** Read `.claude/HANDOVER.md` at the project root. If it does not exist, say so, mention that `/handover:write` can create one, and stop.
 2. **Check it against reality.**
+   - **Newer note on another branch?** If `.claude/HANDOVER.md` is tracked in git, every branch carries its own copy, so switching branches silently swaps the note. List the last change to the note on each branch:
+     `git for-each-ref --format='%(refname:short)' refs/heads | xargs -I{} git log -1 --format='%ci {}' {} -- .claude/HANDOVER.md | sort -r`
+     If another branch has a newer note than the current one, stop and tell the user which branch it is on before anything else; they may be on the wrong branch.
    - Is the current branch the one in the note? If not, stop and ask the user.
    - Do `git status` and recent commits contradict the note? List any contradictions; the current files win.
-   - If the note is older than 7 days, say so explicitly.
+   - If the note is older than 7 days, say so explicitly. Judge its age by its `Updated:` line, not by the file's modification time: `git checkout` and `git pull` reset that time, so an old note looks new.
 3. **Load relevant knowledge.** If the project knowledge index (`.claude/knowledge/INDEX.md`, already in your context when it exists) lists topic files related to the first next step, read them before proposing it.
 4. **Summarize.** A status summary of at most 5 lines, plus the first next step.
 5. **Get confirmation.** If open questions block the first step, ask them first. Otherwise, ask the user to confirm before starting the first step.

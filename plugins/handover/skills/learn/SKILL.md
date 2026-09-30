@@ -23,13 +23,14 @@ Put each item in exactly one layer. If it does not belong here, say where it goe
 - **The user explicitly asks:** that is consent. Save it, then show exactly what was written and where. Ask first only if the content or the reason is unclear.
 - **You discover something durable** (a root cause, a non-obvious constraint, an environment quirk): offer in one line. Save nothing unless the user says yes.
 
-**Never store secrets or personal data.** No passwords, API keys, tokens, connection strings with credentials, or personal data about customers or colleagues: this directory is committed to the repository. Record *where* a secret lives ("the staging DB password is in the team vault under X"), never the secret itself.
+**Never store secrets or personal data.** No passwords, API keys, tokens, connection strings with credentials, or personal data about customers or colleagues: this directory is committed to the repository. Record *where* a secret lives ("the staging DB password is in the team vault under X"), never the secret itself. If a file you are about to change already contains something that looks like a secret (password, API key, token, private key, credentials in a connection string), tell the user before writing anything, and suggest removing it and rotating the secret; removing it from the file does not remove it from git history.
 
 ## 1. Word it
 
 - **Decisions** need the reason; a decision without a why cannot be re-evaluated later. Include rejected alternatives when they were seriously considered.
 - **Facts** should be concrete and checkable: names, paths, ports, commands, versions.
 - Use absolute dates.
+- **Language:** write each entry in the language of the file you add it to; a new file uses the language the user is using.
 
 ## 2. Pick the topic file
 

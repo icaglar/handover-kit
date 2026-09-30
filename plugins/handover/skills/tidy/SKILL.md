@@ -34,7 +34,7 @@ Look for these problems, across layers as well as within them:
 - **Stale entries:** paths, files, functions, commands, or dependencies the entries mention that no longer exist in the repository (check with file search); decisions that were reversed but are still marked active; handover notes older than 7 days; items still marked Unverified.
 - **Misplaced entries:** instructions sitting in the knowledge base (they belong in rules); project facts sitting in rules or auto memory that the team would need (they belong in the knowledge base); current-work state sitting anywhere except the handover note.
 - **Secrets and personal data:** anything that looks like a password, API key, token, private key, connection string with credentials, or personal data about customers or colleagues, especially in committed files. Report these first.
-- **Broken rules:** `paths` frontmatter with unquoted globs (invalid YAML; the rule then loads everywhere), and `paths` in user-level rules under `~/.claude/rules/` (currently ignored, so the rule never loads).
+- **Broken rules:** `paths` frontmatter that does not parse as YAML (the rule then silently loads everywhere), and `paths` in user-level rules under `~/.claude/rules/` (currently ignored, so the rule never loads). Report only frontmatter that actually fails to parse; check it with a YAML parser when one is available. An unquoted pattern such as `src/**/*.py` is valid. Only unquoted patterns that *start* with a YAML indicator character (`*`, `{`, `[`, `&`, `!`, `?`, `|`, `>`, `%`, `@`, or a backtick) break it; the fix is to quote them.
 
 Use this placement guide when deciding where something belongs:
 
@@ -48,7 +48,13 @@ Use this placement guide when deciding where something belongs:
 
 ## 3. Report
 
-Present the findings as one numbered list, most important first (secrets, then contradictions, then everything else). For each: the problem, where it is, and the exact proposed change. End with the current always-loaded size and the size after the proposed changes. Then ask which changes to apply: all, some (by number), or none.
+Present the findings as one numbered list, most important first (secrets, then contradictions, then everything else). For each: the problem, where it is, and the exact proposed change. End with the current always-loaded size and the size after the proposed changes. Then ask what to apply, as a form when the `AskUserQuestion` tool is available (1-4 questions per call, 2-4 options each; it adds "Other" by itself):
+
+- One single-choice question per contradiction, header "Conflict", options = the competing entries. Never pick the winner yourself.
+- Then multi-select questions for the remaining fixes, at most 4 options each, header "Apply", labelled with the finding number and a few words, the safe ones marked "(Recommended)".
+- More than 4 questions: use follow-up forms.
+
+Without the tool, ask in plain text: "Reply with the numbers to apply, \"all\", or \"none\"; for each conflict, say which entry wins."
 
 If you find nothing worth changing, say so in one line and stop.
 

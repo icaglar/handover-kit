@@ -19,7 +19,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _common import NOTE_PATH, disabled, project_dir, setting, state_path  # noqa: E402
+from _common import NOTE_PATH, disabled, note_timestamp, project_dir, setting, state_path  # noqa: E402
 
 FRESH_MINUTES = setting("FRESH_MINUTES", 30)
 
@@ -36,7 +36,7 @@ def main() -> int:
     marker = state_path("precompact", payload.get("session_id", ""))
 
     if note.is_file():
-        age_minutes = (time.time() - note.stat().st_mtime) / 60
+        age_minutes = (time.time() - note_timestamp(note)) / 60
         if age_minutes <= FRESH_MINUTES:
             # Fresh note: clear any old block marker so the next fill cycle
             # can pause once again.

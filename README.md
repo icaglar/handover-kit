@@ -25,6 +25,7 @@ handover-kit/
     ├── hooks/hooks.json                # UserPromptSubmit, PreCompact, SessionStart
     ├── scripts/                        # hook scripts (Python, no dependencies)
     └── skills/
+        ├── setup/SKILL.md              # /handover:setup
         ├── write/SKILL.md              # /handover:write
         ├── rule/SKILL.md               # /handover:rule
         ├── learn/SKILL.md              # /handover:learn

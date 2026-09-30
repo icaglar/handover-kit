@@ -1,6 +1,6 @@
 ---
 name: write
-description: Writes a session handover note to .claude/HANDOVER.md, asking the user about state that is not visible in the conversation before writing, and saves the rules the user set and the durable project knowledge gained during the session (to .claude/rules/ and .claude/knowledge/) once confirmed. Use this skill whenever the user asks for a handover or handoff note, wants to save or snapshot the current state, says they are wrapping up or ending the session, when the context is getting full, or when a context-threshold note appears in the context. Also use it for equivalent requests in other languages, such as "devir notu yaz".
+description: Writes a session handover note to .claude/HANDOVER.md, asking the user about state that is not visible in the conversation before writing, and saves the rules the user set and the durable project knowledge gained during the session (to .claude/rules/ and .claude/knowledge/) once confirmed. Use this skill when the user asks for a handover or handoff note, wants to save or snapshot the current state, or says they are wrapping up or ending the session, when a context-threshold note from the plugin is present in the context, or for equivalent requests in other languages such as "devir notu yaz". Do not start it on your own because the conversation feels long: the plugin measures context usage and tells you when it is time.
 ---
 
 # Write a handover note
@@ -25,18 +25,32 @@ Do not say anything to the user in this step; just gather.
 - **Existing knowledge:** the index `.claude/knowledge/INDEX.md` is already in your context if it exists; read the topic files your candidates touch, so you can drop duplicates and spot decisions that a new one supersedes.
 - **Existing note:** if `.claude/HANDOVER.md` exists, read it. Update it rather than rewriting from scratch; keep what still holds and collapse finished items to a single line.
 
-## 2. Question round
+## 2. Question round, as a form
 
-Before writing, ask at most 5 questions in a single message. Each question should be specific to this work and target something you cannot derive from the conversation. Good sources of questions:
+Ask as a form, not as free text: the user should tap an answer or accept your suggestion, not compose a reply. Answering questions at the end of a long session is tiring; a pre-filled form takes seconds.
 
-- **Changes outside the conversation:** deploys, feedback from customers or the team, changes someone else made, files edited by hand.
-- **Open decisions:** decisions not yet made, and which way the user is leaning.
-- **Uncertain recollections:** points from early in the conversation you are not sure about. Ask them as confirmations, for example "My understanding is we decided on X — is that right?"
-- **Priority:** what should happen first in the next session?
-- **Off-limits:** any file, module, or decision that must not be touched?
-- **What to keep permanently:** if you found candidate rules or knowledge, list them in one question, rules as R1, R2… and knowledge as K1, K2…, and ask which to keep. Point out any conflict with an existing rule or decision and ask which one wins. This counts as one question toward the 5-question limit.
+**Use the `AskUserQuestion` tool when it is available.** One call takes 1-4 questions with 2-4 options each; it adds an "Other" choice for free text by itself, so never add one. Rules for the form:
 
-Do not ask generic questions such as "Anything else to add?". If the user says "don't ask, just write", or leaves some questions unanswered, write the note anyway and mark the unanswered items as **Unverified**. Never save a rule or knowledge item the user did not confirm. Unconfirmed rule candidates go into the note's constraints section and unconfirmed knowledge into its decisions or current-state sections, marked Unverified.
+- **Pre-fill.** Put your best guess first in every question and mark it "(Recommended)", so the user can accept it in one tap. Derive guesses from the conversation and git state.
+- **Short labels, details in descriptions.** Labels of 1-5 words; the full wording or reason goes in the option description. `header` is at most 12 characters.
+- **Ask only what you cannot derive.** Drop a question when the conversation already answers it. Fewer questions is better.
+- **Language.** Write the form in the language the user is using.
+
+Questions, in this order (skip any whose answer you already have; a form with two questions is fine):
+
+1. **Keep**: the candidate rules and project knowledge worth making permanent (knowledge = decisions with their reason, gotchas, environment details). Leave out what `CLAUDE.md`, the rules, or the knowledge base already hold, and anything that only concerns the current task. Shape it by the number of candidates, because the tool needs 2-4 options per question:
+   - **none:** skip the question.
+   - **one:** a single-choice question with the options "Save it (Recommended)" and "Only in the note".
+   - **2-4:** one `multiSelect` question, one option per candidate. Label with a prefix and 1-3 words ("Rule: pytest -x", "Fact: ERP pageSize"); the full wording or reason goes in the description. If a candidate conflicts with or replaces an existing rule or decision, say so in its description ("replaces the active Celery and RQ decisions").
+   - **more than 4:** the same `multiSelect` with the four most durable. Put the rest into the note as normal content, and tell the user they can save any of them later with `/handover:rule` or `/handover:learn`.
+2. **Next step** (single choice): the most likely first task for the next session, from the conversation and git state, recommended option first.
+3. **Outside chat** (single choice): "Did anything change outside this conversation (deploys, feedback, edits by hand)?" Options "Nothing changed (Recommended)" and "Not sure". Say in the question text that "Other" lets the user type details. This cannot be pre-filled, so it stays a one-tap question.
+
+Constraints the user stated ("don't touch migrations/") need no question: write them into the note directly. Fold uncertain recollections into the options as confirmations ("Confirm: we dropped cursor pagination") instead of asking them separately.
+
+**Without `AskUserQuestion`** (a subagent, another client, or the tool is unavailable or returns no answer): ask the same questions in one plain-text message as a numbered list, each with lettered choices and your recommendation marked, so the user can reply "1a 3a" or "all recommended".
+
+**If the user dismisses the form or says "don't ask, just write":** write the note anyway. Text typed under "Other" goes into the note's "From the user" section. Only save rules and knowledge the user confirmed. A candidate the user *declined* to make permanent still goes into the note if it matters for the current work, written normally: the user did not doubt it, they just did not want to keep it beyond this task. Mark **Unverified** only what the user left unanswered and you could not confirm from the conversation.
 
 ## 3. Save confirmed rules and knowledge
 
@@ -48,10 +62,11 @@ Skip this step if the user confirmed nothing.
 - **Destination:** general project rules go to `.claude/rules/handover-rules.md`. Rules for specific files go to `.claude/rules/<topic>.md` with a `paths` frontmatter list of **quoted** globs (unquoted patterns starting with `*` or `{` break the YAML, and the rule then loads everywhere). Rules for all of the user's projects go to `~/.claude/rules/handover-rules.md`, never with `paths`, because path-scoped user-level rules are currently ignored.
 - **Format:** append each rule as a list item ending with `(added YYYY-MM-DD)`. A new `handover-rules.md` starts with a `# Project rules` heading and the line "Captured with the handover plugin. Edit freely; delete rules that no longer apply."
 - **Conflicts:** update or remove the losing rule instead of adding a contradicting one; ask before editing a file this plugin did not write, such as `CLAUDE.md`.
+- **Language:** write each entry in the language of the file you add it to; a new file uses the language the user is using.
 
 **Knowledge.** For each confirmed item, follow the same procedure as the `/handover:learn` skill:
 
-- **Never store secrets or personal data**; `.claude/knowledge/` is committed. Record where a secret lives, never the secret.
+- **Never store secrets or personal data**; `.claude/knowledge/` is committed. Record where a secret lives, never the secret. If a file you are about to change already contains something that looks like a secret (password, API key, token, private key, credentials in a connection string), tell the user before writing anything, and suggest removing it and rotating the secret; removing it from the file does not remove it from git history.
 - **Destination:** decisions go to `.claude/knowledge/decisions.md`; facts go to the topic file that fits (`architecture.md`, `environments.md`, `gotchas.md`, or a new plainly named file).
 - **Format:** a decision is a `### <title> — YYYY-MM-DD` block with `Decision`, `Why`, optional `Rejected`, and `Status: active`; a fact is one line ending with `(added YYYY-MM-DD)`.
 - **Superseded decisions** are marked `Status: superseded by "<new title>" (YYYY-MM-DD)`, never deleted.
@@ -59,7 +74,7 @@ Skip this step if the user confirmed nothing.
 
 ## 4. Write the note
 
-Create the `.claude/` directory if it does not exist. Use this template. Do not delete an empty section; write "None" so it is clear the topic was considered and left empty on purpose.
+Re-run `git status --short` right before writing, so the Git state section also lists the rule and knowledge files you changed in step 3. Create the `.claude/` directory if it does not exist. Use this template. Do not delete an empty section; write "None" so it is clear the topic was considered and left empty on purpose.
 
 ```markdown
 # Handover Note
@@ -103,12 +118,15 @@ Writing rules:
 - **Use absolute dates.** Write the date instead of "yesterday"; the note will be read days later.
 - **Be concrete.** Not "fixed the auth part" but "token refresh in `api/auth.py` returned 401; fixed in `refresh_token()`".
 - **Separate guesses from facts.** Mark anything you are not sure about as Unverified.
+- **No secrets or personal data.** The note may be committed. If a password, key, or token came up in the conversation, write where it is stored, never the value.
 - **Keep it short.** Stay under 150 lines. Summarize finished work in a single line under "Current state" and remove items that no longer apply.
 
 ## 5. Close
 
 Tell the user in 2-3 lines where the note is, which rules and knowledge were saved and where (if any), what the next step is, and that the note will be loaded automatically after `/clear` or `/compact`. Saved rules and the knowledge index load automatically in every future session.
 
-## When a context-threshold note appears
+## When to start
 
-If you see a note in the context saying the context window is filling up: first answer the user's current request, then offer to write a handover note and start the question round above. If the user says not now, do not push; continue with the work.
+Start only when (a) the user asked for a handover or to save state, or (b) a context-threshold note from the plugin is in the context. Do not start because the conversation feels long or you guess the context is filling up; the plugin measures usage, and asking too early interrupts the work.
+
+When the threshold note is present: first answer the user's current request, then say in one short line where the context stands, quoting the figures from the note (for example "Context is at about 72% (144k of 200k tokens, threshold 70%)"), then show the form. Follow the note's hint if the user says their own indicator shows a different figure. If the user dismisses the form, treat that as "not now" and continue with the work; do not ask again until the plugin adds a new note.

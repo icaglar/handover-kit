@@ -1,7 +1,7 @@
 {
   "name": "handover",
   "displayName": "Handover",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "Handover notes and memory management for Claude Code: starts the handover at a context threshold, asks about state before writing, captures rules and durable project knowledge, restores the note after compaction or /clear, and audits all memory layers for duplicates, contradictions, and stale entries.",
   "author": {
     "name": "İbrahim"

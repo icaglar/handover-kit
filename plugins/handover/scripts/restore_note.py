@@ -14,7 +14,7 @@ import time
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _common import NOTE_PATH, disabled, project_dir  # noqa: E402
+from _common import NOTE_PATH, disabled, note_timestamp, project_dir  # noqa: E402
 
 MAX_CHARS = 20_000
 
@@ -53,7 +53,7 @@ def main() -> None:
     if len(content) > MAX_CHARS:
         content = content[:MAX_CHARS] + "\n\n[... note truncated; full text is in the file]"
 
-    mtime = note.stat().st_mtime
+    mtime = note_timestamp(note)
     when = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M")
     age = age_text(time.time() - mtime)
 

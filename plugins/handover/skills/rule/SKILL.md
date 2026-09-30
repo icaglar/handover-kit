@@ -50,6 +50,7 @@ Never put `paths` in a user-level rule under `~/.claude/rules/`: path-scoped rul
 Before writing, read the rule sources that exist: `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, every file under `.claude/rules/`, `~/.claude/CLAUDE.md`, and `~/.claude/rules/`.
 
 - **Duplicate:** do not add it. Tell the user where the rule already lives.
+- **Secrets:** If a file you are about to change already contains something that looks like a secret (password, API key, token, private key, credentials in a connection string), tell the user before writing anything, and suggest removing it and rotating the secret; removing it from the file does not remove it from git history.
 - **Conflict:** show both rules and ask which one wins. Update or remove the losing rule instead of adding a contradicting one. If the losing rule lives outside the files this plugin writes (for example in `CLAUDE.md`), ask before editing that file.
 
 ## 4. Write
@@ -63,6 +64,7 @@ Before writing, read the rule sources that exist: `CLAUDE.md`, `.claude/CLAUDE.m
   ```
 
 - Append the rule as a list item ending with `(added YYYY-MM-DD)` using the absolute date.
+- **Language:** write each entry in the language of the file you add it to; a new file uses the language the user is using.
 - Keep rule files short. Files over 200 lines consume more context and reduce adherence. If a rules file passes about 50 rules, suggest consolidating related rules or moving stable, project-wide ones into `CLAUDE.md`.
 
 ## 5. Confirm
