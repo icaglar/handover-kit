@@ -33,24 +33,29 @@ Ask as a form, not as free text: the user should tap an answer or accept your su
 
 - **Pre-fill.** Put your best guess first in every question and mark it "(Recommended)", so the user can accept it in one tap. Derive guesses from the conversation and git state.
 - **Short labels, details in descriptions.** Labels of 1-5 words; the full wording or reason goes in the option description. `header` is at most 12 characters.
-- **Ask only what you cannot derive.** Drop a question when the conversation already answers it. Fewer questions is better.
+- **Ask only what you cannot derive from the conversation, but then ask all of it.** Drop a question the conversation already answers. When a real question remains, ask it instead of guessing: a tap costs the user seconds, a wrong guess costs the next session.
 - **Language.** Write the form in the language the user is using.
 
-Questions, in this order (skip any whose answer you already have; a form with two questions is fine):
+**Build the list of questions first, then ask them in as few forms as possible: fill each form to the tool's limit of 4 questions, and when more questions remain, show a second form, then a third.** Say one short line before a follow-up form ("Second form, 3 questions left"). Ask at most 3 forms (12 questions); what does not fit goes into the note as normal content, or as **Unverified** where it is a real open point.
 
-1. **Keep**: the candidate rules and project knowledge worth making permanent (knowledge = decisions with their reason, gotchas, environment details). Leave out what `CLAUDE.md`, the rules, or the knowledge base already hold, and anything that only concerns the current task. Shape it by the number of candidates, because the tool needs 2-4 options per question:
-   - **none:** skip the question.
+The pool, in priority order. Ask them in this order, so that if anything is cut it is the least important; the first ones decide what gets saved. Include a question only if you cannot answer it from the conversation:
+
+1. **Keep**: the candidate rules and project knowledge worth making permanent (knowledge = decisions with their reason, gotchas, environment details). Leave out what `CLAUDE.md`, the rules, or the knowledge base already hold, and anything that only concerns the current task. The tool needs 2-4 options per question, so shape it by the number of candidates:
+   - **none:** skip.
    - **one:** a single-choice question with the options "Save it (Recommended)" and "Only in the note".
    - **2-4:** one `multiSelect` question, one option per candidate. Label with a prefix and 1-3 words ("Rule: pytest -x", "Fact: ERP pageSize"); the full wording or reason goes in the description. If a candidate conflicts with or replaces an existing rule or decision, say so in its description ("replaces the active Celery and RQ decisions").
-   - **more than 4:** the same `multiSelect` with the four most durable. Put the rest into the note as normal content, and tell the user they can save any of them later with `/handover:rule` or `/handover:learn`.
+   - **more than 4:** several Keep questions, splitting the candidates as evenly as possible into groups of 2-4 (5 becomes 3+2, 9 becomes 3+3+3), the most durable first. Never leave a group of one.
 2. **Next step** (single choice): the most likely first task for the next session, from the conversation and git state, recommended option first.
 3. **Outside chat** (single choice): "Did anything change outside this conversation (deploys, feedback, edits by hand)?" Options "Nothing changed (Recommended)" and "Not sure". Say in the question text that "Other" lets the user type details. This cannot be pre-filled, so it stays a one-tap question.
+4. **Open points**: one single-choice question for each point still open in the conversation (a decision not made yet, a question that blocks the first next step, scope such as "is X part of this PR?"). Options are the plausible answers, recommended first, and "Not decided yet" last. An answer goes into Decisions (with the user's reason if they gave one); "Not decided yet" stays under Open questions.
+5. **Confirmations**: one single-choice question for each point from early in the conversation you are not sure you remember correctly (a decision, a dropped approach, a number). Options "Right (Recommended)" and "Not sure"; "Other" lets the user correct it. Anything left unconfirmed is marked Unverified in the note.
+6. **Off-limits check**: "Anything to leave alone besides what we discussed?" Options "Only what we discussed (Recommended)" and "Not sure"; "Other" for details. Ask it only if the work touches shared or sensitive areas (migrations, deploys, other people's code).
 
-Constraints the user stated ("don't touch migrations/") need no question: write them into the note directly. Fold uncertain recollections into the options as confirmations ("Confirm: we dropped cursor pagination") instead of asking them separately.
+Constraints the user stated ("don't touch migrations/") need no question: write them into the note directly.
 
-**Without `AskUserQuestion`** (a subagent, another client, or the tool is unavailable or returns no answer): ask the same questions in one plain-text message as a numbered list, each with lettered choices and your recommendation marked, so the user can reply "1a 3a" or "all recommended".
+**Without `AskUserQuestion`** (a subagent, another client, or the tool is unavailable or returns no answer): ask the same pool in plain text, in the same batches of four, one message per batch: a numbered list, each question with lettered choices and your recommendation marked, so the user can reply "1a 3a" or "all recommended".
 
-**If the user dismisses the form or says "don't ask, just write":** write the note anyway. Text typed under "Other" goes into the note's "From the user" section. Only save rules and knowledge the user confirmed. A candidate the user *declined* to make permanent still goes into the note if it matters for the current work, written normally: the user did not doubt it, they just did not want to keep it beyond this task. Mark **Unverified** only what the user left unanswered and you could not confirm from the conversation.
+**If the user dismisses a form or says "don't ask, just write":** stop asking, do not show the next form, and write the note anyway. Text typed under "Other" goes into the note's "From the user" section. Only save rules and knowledge the user confirmed. A candidate the user *declined* to make permanent still goes into the note if it matters for the current work, written normally: the user did not doubt it, they just did not want to keep it beyond this task. Mark **Unverified** only what the user left unanswered and you could not confirm from the conversation.
 
 ## 3. Save confirmed rules and knowledge
 

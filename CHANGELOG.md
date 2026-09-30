@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 — 2026-09-30
+
+- `/handover:write` fills every form to the tool's limit of four questions and continues in a second and third form (at most three) when more questions remain, instead of dropping them. New question types: open points, confirmations of things Claude is unsure it remembers, and an off-limits check. Many rule and fact candidates are split over several checkbox questions instead of being cut at four. The most important questions always come first.
+
 ## 0.4.0 — 2026-09-30
 
 - New `/handover:setup` (manual only; adds about 60 tokens to every session): connects the plugin to Claude Code's status line so the threshold hook uses the real context window of the model in use and Claude Code's own percentage, including after `/model` switches. An existing status line keeps running and is restored exactly on removal; `settings.json` is backed up first.

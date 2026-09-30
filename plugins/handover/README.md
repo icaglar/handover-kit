@@ -4,7 +4,7 @@ Gets a handover note written before the context fills up, asks you about state b
 
 | Part | When it runs | What it does |
 |---|---|---|
-| `/handover:write` | Manually, or after the threshold note | Shows a short tap-to-answer form first (which rules and facts to keep, the next step, anything that changed outside the chat), then saves what you confirmed and writes `.claude/HANDOVER.md` from a fixed template |
+| `/handover:write` | Manually, or after the threshold note | Shows tap-to-answer forms first (which rules and facts to keep, the next step, anything that changed outside the chat, open points, things to confirm), then saves what you confirmed and writes `.claude/HANDOVER.md` from a fixed template |
 | `/handover:rule` | Whenever you say "make this a rule" | Saves a single rule to `.claude/rules/` right away, after checking for duplicates and conflicts |
 | `/handover:learn` | Whenever you say "save this decision" or "note this for the project" | Saves a single fact or decision to the shared knowledge base in `.claude/knowledge/` |
 | `/handover:setup` | Once (optional) | Connects the plugin to Claude Code's status line so it knows the real context window of the model in use, and follows `/model` switches. Manual only: it adds just its name (about 60 tokens) to every session |
@@ -40,7 +40,7 @@ Rule files are plain markdown; edit or delete rules freely. Commit `.claude/rule
 
 ## The question form
 
-The questions come as a form, not free text. Claude Code's built-in `AskUserQuestion` tool shows up to four questions at once; every question has a suggested answer marked "(Recommended)" that you can accept in one tap, checkboxes for "which of these rules and facts should be permanent", and an "Other" field when you want to type something. Accept the recommendations, fix two things, done. If the tool is not available (another client, a subagent), the same questions arrive as one numbered plain-text list with lettered choices, and you can reply "1a 3a" or "all recommended". Dismiss the form, or say "don't ask, just write", and the note is written anyway with the unanswered items marked Unverified.
+The questions come as a form, not free text. Claude Code's built-in `AskUserQuestion` tool takes up to four questions per form. The plugin fills each form to that limit and, when there are more questions, shows a second and a third form (at most three, twelve questions). The most important come first: what to keep permanently, the next step, and what changed outside the chat; then open points, things to confirm, and an off-limits check. Only questions Claude cannot answer from the conversation are asked. Every question has a suggested answer marked "(Recommended)" that you can accept in one tap, checkboxes for "which of these rules and facts should be permanent", and an "Other" field when you want to type something. Accept the recommendations, fix two things, done. If the tool is not available (another client, a subagent), the same questions arrive as one numbered plain-text list with lettered choices, and you can reply "1a 3a" or "all recommended". Dismiss the form, or say "don't ask, just write", and the note is written anyway with the unanswered items marked Unverified.
 
 ## Memory
 
