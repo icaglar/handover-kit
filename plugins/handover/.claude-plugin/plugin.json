@@ -1,22 +1,24 @@
 {
   "name": "handover",
   "displayName": "Handover",
-  "version": "0.4.1",
-  "description": "Handover notes and memory management for Claude Code: starts the handover at a context threshold, asks about state before writing, captures rules and durable project knowledge, restores the note after compaction or /clear, and audits all memory layers for duplicates, contradictions, and stale entries.",
+  "version": "0.6.0",
+  "description": "Handover notes and memory management for Claude Code: starts the handover at a context threshold, asks about state in tap-to-answer forms, captures rules, project and personal knowledge and a project overview, restores the note after compaction or /clear, offers to continue in a new session, and audits all memory layers.",
   "author": {
     "name": "İbrahim"
   },
   "license": "MIT",
   "keywords": [
-    "handover",
-    "handoff",
-    "context",
     "compaction",
-    "state",
-    "session",
+    "context",
+    "handoff",
+    "handover",
+    "knowledge",
     "memory",
+    "overview",
+    "personal",
     "rules",
-    "knowledge"
+    "session",
+    "state"
   ],
   "userConfig": {
     "threshold": {
@@ -41,6 +43,18 @@
       "default": 30,
       "min": 5,
       "max": 240
+    },
+    "offer_when_done": {
+      "type": "boolean",
+      "title": "Offer a handover when the job is done",
+      "description": "After substantial work, Claude offers a handover note once, when it finishes what you asked. It never closes the session.",
+      "default": true
+    },
+    "offer_resume": {
+      "type": "boolean",
+      "title": "Offer to continue from the handover note",
+      "description": "When a new session starts and a recent handover note exists, Claude offers to continue from it, with your approval.",
+      "default": true
     }
   }
 }

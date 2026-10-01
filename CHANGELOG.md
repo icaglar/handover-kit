@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.0 — 2026-09-30
+
+- Personal knowledge: facts and decisions that hold across all of the user's projects live in `~/.claude/handover/personal/` (outside any repo, never committed) with their own index, loaded in every project. `/handover:learn` asks for the scope when it is unclear; the handover form labels such items Personal.
+- Project overview: `/handover:learn overview` writes a short `.claude/knowledge/overview.md` (purpose, stack, layout, external services, status) that loads in every session; `/handover:write` keeps its Status line current.
+- `/handover:tidy` covers both: size caps, scope mix-ups (repo-specific facts in the personal folder and the reverse), duplicates across scopes, a stale or missing overview. Its placement guide no longer sends the project overview to `CLAUDE.md`.
+- Includes 0.5.0 (done offer, resume offer), which was not published separately.
+
+## 0.5.0 — 2026-09-30
+
+- Done offer: after substantial work in a session, once, Claude ends its final reply with a one-line offer of a handover note when the job is finished. It never closes the session (Claude Code gives neither Claude nor hooks a way to). New setting `offer_when_done`, on by default.
+- Resume offer: when a fresh session starts and a recent handover note exists that the work has not moved past (no code commits since, under 21 days old), Claude offers in its first reply to continue from it, with the user's approval; `/handover:resume` then checks the note against the repository. New setting `offer_resume`, on by default.
+- `/handover:write` tells a user who is wrapping up that they can end the session with `/exit`.
+
 ## 0.4.1 — 2026-09-30
 
 - `/handover:write` fills every form to the tool's limit of four questions and continues in a second and third form (at most three) when more questions remain, instead of dropping them. New question types: open points, confirmations of things Claude is unsure it remembers, and an off-limits check. Many rule and fact candidates are split over several checkbox questions instead of being cut at four. The most important questions always come first.

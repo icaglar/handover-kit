@@ -1,5 +1,5 @@
 {
-  "description": "Handover: starts the handover at a context threshold, pauses auto-compaction once if there is no fresh note, restores the note after compaction or /clear, and loads the project knowledge index in every session.",
+  "description": "Handover: starts the handover at a context threshold, offers one after substantial work when the job is done, pauses auto-compaction once if there is no fresh note, restores the note after compaction or /clear, loads the project knowledge index in every session, and offers to continue from the note when a new session starts.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -7,6 +7,11 @@
           {
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"${CLAUDE_PLUGIN_ROOT}/scripts/context_threshold.py\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"${CLAUDE_PLUGIN_ROOT}/scripts/completion_hint.py\"",
             "timeout": 10
           }
         ]
@@ -41,6 +46,16 @@
           {
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"${CLAUDE_PLUGIN_ROOT}/scripts/knowledge_index.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"${CLAUDE_PLUGIN_ROOT}/scripts/resume_offer.py\"",
             "timeout": 10
           }
         ]

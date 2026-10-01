@@ -5,6 +5,8 @@ description: Reads the .claude/HANDOVER.md handover note and continues the work 
 
 # Resume from a handover note
 
+This skill also runs when the user accepts the plugin's offer, at the start of a session, to continue from the note.
+
 The note is a previous session's own summary, not current truth. Code, the branch, or the note itself may have changed or gone stale since. So do not start working before verifying it.
 
 Talk to the user in the language they are using in this conversation.

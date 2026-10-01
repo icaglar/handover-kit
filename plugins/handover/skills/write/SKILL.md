@@ -1,6 +1,6 @@
 ---
 name: write
-description: Writes a session handover note to .claude/HANDOVER.md, asking the user about state that is not visible in the conversation before writing, and saves the rules the user set and the durable project knowledge gained during the session (to .claude/rules/ and .claude/knowledge/) once confirmed. Use this skill when the user asks for a handover or handoff note, wants to save or snapshot the current state, or says they are wrapping up or ending the session, when a context-threshold note from the plugin is present in the context, or for equivalent requests in other languages such as "devir notu yaz". Do not start it on your own because the conversation feels long: the plugin measures context usage and tells you when it is time.
+description: Writes a session handover note to .claude/HANDOVER.md, asking the user about state that is not visible in the conversation before writing, and saves the rules the user set and the durable knowledge gained during the session (to .claude/rules/, .claude/knowledge/, or the personal knowledge folder) once confirmed. Use this skill when the user asks for a handover or handoff note, wants to save or snapshot the current state, or says they are wrapping up or ending the session, when a context-threshold note from the plugin is present in the context, or for equivalent requests in other languages such as "devir notu yaz". Do not start it on your own because the conversation feels long: the plugin measures context usage and tells you when it is time.
 ---
 
 # Write a handover note
@@ -43,7 +43,7 @@ The pool, in priority order. Ask them in this order, so that if anything is cut 
 1. **Keep**: the candidate rules and project knowledge worth making permanent (knowledge = decisions with their reason, gotchas, environment details). Leave out what `CLAUDE.md`, the rules, or the knowledge base already hold, and anything that only concerns the current task. The tool needs 2-4 options per question, so shape it by the number of candidates:
    - **none:** skip.
    - **one:** a single-choice question with the options "Save it (Recommended)" and "Only in the note".
-   - **2-4:** one `multiSelect` question, one option per candidate. Label with a prefix and 1-3 words ("Rule: pytest -x", "Fact: ERP pageSize"); the full wording or reason goes in the description. If a candidate conflicts with or replaces an existing rule or decision, say so in its description ("replaces the active Celery and RQ decisions").
+   - **2-4:** one `multiSelect` question, one option per candidate. Label with a prefix and 1-3 words ("Rule: pytest -x", "Fact: ERP pageSize", "Personal: Hetzner host" for knowledge that holds across all the user's projects); the full wording or reason goes in the description. If a candidate conflicts with or replaces an existing rule or decision, say so in its description ("replaces the active Celery and RQ decisions").
    - **more than 4:** several Keep questions, splitting the candidates as evenly as possible into groups of 2-4 (5 becomes 3+2, 9 becomes 3+3+3), the most durable first. Never leave a group of one.
 2. **Next step** (single choice): the most likely first task for the next session, from the conversation and git state, recommended option first.
 3. **Outside chat** (single choice): "Did anything change outside this conversation (deploys, feedback, edits by hand)?" Options "Nothing changed (Recommended)" and "Not sure". Say in the question text that "Other" lets the user type details. This cannot be pre-filled, so it stays a one-tap question.
@@ -72,10 +72,11 @@ Skip this step if the user confirmed nothing.
 **Knowledge.** For each confirmed item, follow the same procedure as the `/handover:learn` skill:
 
 - **Never store secrets or personal data**; `.claude/knowledge/` is committed. Record where a secret lives, never the secret. If a file you are about to change already contains something that looks like a secret (password, API key, token, private key, credentials in a connection string), tell the user before writing anything, and suggest removing it and rotating the secret; removing it from the file does not remove it from git history.
-- **Destination:** decisions go to `.claude/knowledge/decisions.md`; facts go to the topic file that fits (`architecture.md`, `environments.md`, `gotchas.md`, or a new plainly named file).
+- **Destination:** decisions go to `.claude/knowledge/decisions.md`; facts go to the topic file that fits (`architecture.md`, `environments.md`, `gotchas.md`, or a new plainly named file). Items labelled Personal go to `~/.claude/handover/personal/` (under `$CLAUDE_CONFIG_DIR` if set) with its own `INDEX.md` of at most 30 lines, as in `/handover:learn`; never copy a fact into both scopes.
 - **Format:** a decision is a `### <title> — YYYY-MM-DD` block with `Decision`, `Why`, optional `Rejected`, and `Status: active`; a fact is one line ending with `(added YYYY-MM-DD)`.
 - **Superseded decisions** are marked `Status: superseded by "<new title>" (YYYY-MM-DD)`, never deleted.
 - **Index:** update `.claude/knowledge/INDEX.md` (one line per topic file, under 60 lines; create it with a `# Project knowledge` heading if missing).
+- **Overview:** if `.claude/knowledge/overview.md` exists and this session changed what it describes (stack, layout, external services, status), update only the affected lines and the date, and say so in the closing lines. Do not create an overview here; that is `/handover:learn`.
 
 ## 4. Write the note
 
@@ -128,7 +129,7 @@ Writing rules:
 
 ## 5. Close
 
-Tell the user in 2-3 lines where the note is, which rules and knowledge were saved and where (if any), what the next step is, and that the note will be loaded automatically after `/clear` or `/compact`. Saved rules and the knowledge index load automatically in every future session.
+Tell the user in 2-3 lines where the note is, which rules and knowledge were saved and where (if any), what the next step is, and that the note will be loaded automatically after `/clear` or `/compact`. Saved rules and the knowledge index load automatically in every future session. If the user is wrapping up, add that they can end the session now with `/exit` (you cannot close it yourself) and pick the work up later: in a fresh session Claude sees the note and offers to continue from it (you can also run `/handover:resume`). After `/clear` or `/compact` the note is loaded on its own.
 
 ## When to start
 

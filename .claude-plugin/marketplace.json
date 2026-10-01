@@ -10,7 +10,7 @@
     {
       "name": "handover",
       "source": "./plugins/handover",
-      "description": "Handover notes and memory management for Claude Code: starts the handover at a context threshold, asks about state before writing, captures rules and durable project knowledge, restores the note after compaction or /clear, and audits all memory layers for duplicates, contradictions, and stale entries.",
+      "description": "Handover notes and memory management for Claude Code: starts the handover at a context threshold, asks about state in tap-to-answer forms, captures rules, project and personal knowledge and a project overview, restores the note after compaction or /clear, offers to continue in a new session, and audits all memory layers.",
       "category": "productivity"
     }
   ]

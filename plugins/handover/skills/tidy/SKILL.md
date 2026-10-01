@@ -19,7 +19,9 @@ Read every layer that exists and note its size in lines and approximate tokens (
 | Personal instructions | `~/.claude/CLAUDE.md` | every session |
 | Rules | `.claude/rules/**/*.md`, `~/.claude/rules/*.md` | every session, or on matching files when path-scoped |
 | Auto memory | the auto memory directory named in your own system prompt (by default under `~/.claude/projects/<project>/memory/`) | `MEMORY.md`: first 200 lines or 25KB; topic files on demand |
+| Project overview | `.claude/knowledge/overview.md` | every session (capped at 25 lines) |
 | Project knowledge | `.claude/knowledge/INDEX.md` and topic files | index every session (capped at 60 lines); topic files on demand |
+| Personal knowledge | `~/.claude/handover/personal/INDEX.md` and topic files (under `$CLAUDE_CONFIG_DIR` if set) | index every session in every project (capped at 30 lines); topic files on demand |
 | Handover note | `.claude/HANDOVER.md` | after compaction or `/clear` |
 
 Skip layers that do not exist. If auto memory is disabled or its directory is empty, say so and move on.
@@ -28,11 +30,13 @@ Skip layers that do not exist. If auto memory is disabled or its directory is em
 
 Look for these problems, across layers as well as within them:
 
-- **Size:** `MEMORY.md` past 200 lines or 25KB (the excess is not loaded at session start); `CLAUDE.md` or any rules file past 200 lines (adherence drops); the knowledge index past 60 lines (the excess is not loaded).
+- **Size:** `MEMORY.md` past 200 lines or 25KB (the excess is not loaded at session start); `CLAUDE.md` or any rules file past 200 lines (adherence drops); the project knowledge index past 60 lines, the personal index past 30, or the overview past 25 (the excess is not loaded).
 - **Duplicates:** the same fact or rule in more than one place. Keep it in the layer where it belongs and remove the others.
 - **Contradictions:** two entries that cannot both be true. Do not pick a winner yourself; ask the user.
 - **Stale entries:** paths, files, functions, commands, or dependencies the entries mention that no longer exist in the repository (check with file search); decisions that were reversed but are still marked active; handover notes older than 7 days; items still marked Unverified.
-- **Misplaced entries:** instructions sitting in the knowledge base (they belong in rules); project facts sitting in rules or auto memory that the team would need (they belong in the knowledge base); current-work state sitting anywhere except the handover note.
+- **Misplaced entries:** instructions sitting in the knowledge base (they belong in rules); project facts sitting in rules or auto memory that the team would need (they belong in the knowledge base); current-work state sitting anywhere except the handover note; commands or conventions copied into the overview (they belong in `CLAUDE.md`).
+- **Scope mix-ups:** facts in the personal knowledge that are really about one repository (they belong in that project's knowledge, and are lost to the team where they are); facts in the project knowledge that hold for all of the user's projects and are not team business, such as their own accounts or stack habits (suggest moving them to the personal knowledge, and say that it then stops being shared with the team, so ask first); the same fact in both scopes.
+- **Stale overview:** directories, services or commands the overview mentions that no longer exist (resolve file names from the repo root and from `.claude/knowledge/`, where the knowledge files live), a Status line older than 30 days, or no overview at all in a project that has a knowledge base (suggest `/handover:learn overview`).
 - **Secrets and personal data:** anything that looks like a password, API key, token, private key, connection string with credentials, or personal data about customers or colleagues, especially in committed files. Report these first.
 - **Broken rules:** `paths` frontmatter that does not parse as YAML (the rule then silently loads everywhere), and `paths` in user-level rules under `~/.claude/rules/` (currently ignored, so the rule never loads). Report only frontmatter that actually fails to parse; check it with a YAML parser when one is available. An unquoted pattern such as `src/**/*.py` is valid. Only unquoted patterns that *start* with a YAML indicator character (`*`, `{`, `[`, `&`, `!`, `?`, `|`, `>`, `%`, `@`, or a backtick) break it; the fix is to quote them.
 
@@ -43,8 +47,10 @@ Use this placement guide when deciding where something belongs:
 | Where the current work stands | handover note |
 | How to work ("always…", "never…") | rules |
 | What is true about the project, and why | project knowledge |
-| A personal preference of this user | auto memory or `~/.claude/CLAUDE.md` |
-| Project overview, build and test commands | `CLAUDE.md` |
+| What is true across the user's projects, and why | personal knowledge |
+| What the project is: purpose, stack, layout, services, status | project overview |
+| A personal habit of this user in working with Claude | auto memory or `~/.claude/CLAUDE.md` |
+| Build, test and run commands, conventions Claude must follow | `CLAUDE.md` |
 
 ## 3. Report
 
@@ -62,7 +68,7 @@ If you find nothing worth changing, say so in one line and stop.
 
 Apply only the approved changes.
 
-- **Moving between layers** follows each layer's format: rules as in `/handover:rule`, knowledge as in `/handover:learn` (update `INDEX.md` too), decisions are marked superseded rather than deleted.
+- **Moving between layers** follows each layer's format: rules as in `/handover:rule`, knowledge as in `/handover:learn` (update the `INDEX.md` of both scopes you touch), decisions are marked superseded rather than deleted.
 - **Auto memory** is Claude's personal, machine-local memory. Moving something from it into the knowledge base shares it with the whole team; mention that when proposing the move. When removing an entry from an auto memory topic file, also update its line in `MEMORY.md`.
 - **Secrets:** removing a secret from a file does not remove it from git history. Tell the user to rotate the secret if the file was ever committed.
 

@@ -10,11 +10,13 @@ Gets a handover note written before the context fills up, asks you about state b
 | `/handover:setup` | Once (optional) | Connects the plugin to Claude Code's status line so it knows the real context window of the model in use, and follows `/model` switches. Manual only: it adds just its name (about 60 tokens) to every session |
 | `/handover:tidy` | When memory feels messy, or monthly | Audits all memory layers and fixes what you approve |
 | `/handover:resume` | Manually, in a new session | Reads the note, checks it against git state, and asks you to confirm the first step |
+| Done hook | On every prompt, once per session | After substantial work (about a dozen tool calls), tells Claude to end its final reply with a one-line offer of a handover once the job is finished. Skipped in short sessions, when a fresh note exists, or after the threshold hook has spoken |
+| Resume hook | At the start of a fresh session | If a recent note exists and the work has not moved past it, tells Claude to offer continuing from it, with your approval |
 | Threshold hook | On every prompt | Once the context passes the threshold (70% by default), adds a note so Claude starts the handover. Fires once per fill cycle |
 | PreCompact hook | Before auto-compaction | If there is no fresh note, pauses compaction **once** and allows the next attempt |
 | SessionStart hooks | Every session start, plus after compaction and `/clear` | Loads the project knowledge index in every session, and the handover note (with its age) after compaction or `/clear` |
 
-Hooks add no standing load to the model context; the six skills add roughly 770 tokens per session, plus the knowledge index once you have one (capped at 60 lines). Requirement: Python 3.8+ on PATH as `python3` or `python`. No third-party packages.
+Hooks add no standing load to the model context; the six skills add roughly 790 tokens per session, plus whatever overview and indexes you have (usually a few hundred tokens; about 2,700 at most, when all three are at their caps), plus the knowledge index once you have one (capped at 60 lines). Requirement: Python 3.8+ on PATH as `python3` or `python`. No third-party packages.
 
 ## Why
 
@@ -38,25 +40,43 @@ Where rules go:
 
 Rule files are plain markdown; edit or delete rules freely. Commit `.claude/rules/` if the rules should apply to your whole team.
 
+## When the job is done
+
+The plugin cannot close your session, and nothing in Claude Code lets Claude or a hook do that: `continue: false` only stops Claude's current work, and `SessionEnd` runs after the session is over, with no model to ask anything. What it can do is offer. After substantial work in a session (about twelve tool calls), once per session, it tells Claude to end its final reply with one line offering a handover note when the job is finished and nothing is left open. Claude decides what "finished" means, because a hook cannot read intent. Quick question-and-answer sessions never get the offer, and neither do sessions where a fresh note exists or the context threshold already started a handover. If you tell Claude you are done or leaving, it offers right away.
+
+Accept, and you get the usual form. Then close the session yourself with `/exit`.
+
+## Continuing in a new session
+
+A hook cannot open a session or start a turn, so the plugin cannot launch the next session for you. What it does: when a fresh session starts (`claude` in the project folder) and a recent handover note exists, it tells Claude to offer, in its first reply, to continue from the note. With the form tool that is a two-option tap; if you accept, `/handover:resume` runs: it checks the note against the repository (branch, new commits, age) and asks before starting the first step. If your first message is a clearly different task, Claude does that task and does not bring the note up.
+
+It stays quiet when there is no note, the note is older than 21 days, or code was committed after the note was written (the work already moved on). After `/clear` or `/compact` the note is loaded on its own. Turn the offer off with the `offer_resume` setting or `HANDOVER_OFFER_RESUME=0`.
+
 ## The question form
 
 The questions come as a form, not free text. Claude Code's built-in `AskUserQuestion` tool takes up to four questions per form. The plugin fills each form to that limit and, when there are more questions, shows a second and a third form (at most three, twelve questions). The most important come first: what to keep permanently, the next step, and what changed outside the chat; then open points, things to confirm, and an off-limits check. Only questions Claude cannot answer from the conversation are asked. Every question has a suggested answer marked "(Recommended)" that you can accept in one tap, checkboxes for "which of these rules and facts should be permanent", and an "Other" field when you want to type something. Accept the recommendations, fix two things, done. If the tool is not available (another client, a subagent), the same questions arrive as one numbered plain-text list with lettered choices, and you can reply "1a 3a" or "all recommended". Dismiss the form, or say "don't ask, just write", and the note is written anyway with the unanswered items marked Unverified.
 
 ## Memory
 
-Claude Code already has its own memory, auto memory: notes Claude writes for itself, stored on your machine. The plugin does not add a second copy of that. It manages the layers around it, and adds the one that was missing: shared project knowledge.
+Claude Code already has its own memory, auto memory: notes Claude writes for itself, stored on your machine. The plugin does not add a second copy of that. It manages the layers around it, and adds the ones that were missing: shared project knowledge, a short project overview, and personal knowledge that follows you across projects.
 
 | Layer | Holds | File | Loads |
 |---|---|---|---|
 | State | Where the current work stands | `.claude/HANDOVER.md` | After compaction or `/clear` |
 | Rules | How to work ("always…", "never…") | `.claude/rules/` | Every session |
-| **Knowledge** | What is true about the project, and why | `.claude/knowledge/` | Index every session, details on demand |
+| **Project overview** | What the project is: purpose, stack, layout, services, status | `.claude/knowledge/overview.md` | Every session (max 25 lines) |
+| **Project knowledge** | What is true about the project, and why | `.claude/knowledge/` | Index every session (max 60 lines), details on demand |
+| **Personal knowledge** | What is true across all your projects, and why | `~/.claude/handover/personal/` | Index every session in every project (max 30 lines), details on demand |
 | Auto memory | Claude's personal notes about working with you | `~/.claude/projects/<project>/memory/` | Managed by Claude Code |
-| CLAUDE.md | Project overview, commands | `CLAUDE.md` | Every session |
+| CLAUDE.md | Build, test and run commands; conventions Claude must follow | `CLAUDE.md` | Every session |
 
 **Project knowledge.** Decisions and what you learn about a project usually sit in the handover note until the work is done, and are then pruned away. `/handover:write` now asks which of them to keep, and `/handover:learn` saves one on the spot. They go to `.claude/knowledge/`: decisions in `decisions.md` with their reasons (a reversed decision is marked superseded, not deleted, so the history of why stays), facts in topic files such as `architecture.md`, `environments.md`, and `gotchas.md`. Only the short `INDEX.md` loads in every session; Claude opens the topic files when they are relevant. Unlike auto memory, this directory is committed, so your whole team starts from the same knowledge.
 
-**Never put secrets or personal data in it.** The skills refuse to store passwords, keys, tokens, or credentials, and record where a secret lives instead; `/handover:tidy` flags any that slipped in.
+**Project overview.** `/handover:learn overview` (or "create a project overview") reads the README, manifests, directories and `CLAUDE.md`, asks you only what the repository cannot tell (the purpose, the phase), and writes a short `overview.md`: purpose, stack, layout, external services, status. It describes; it does not repeat the commands in `CLAUDE.md`. `/handover:write` refreshes the Status line when a session changes what it describes, and `/handover:tidy` flags a stale or missing overview.
+
+**Personal knowledge.** Some things are true in every project of yours and belong to no repository: the stack you chose and why, what runs on which server and where the credentials live, how a vendor's API behaves. Say "save this for all my projects" (or label it Personal in the handover form) and `/handover:learn` puts it in `~/.claude/handover/personal/` (under `$CLAUDE_CONFIG_DIR` if you set one), with its own short index that loads in every project. It stays on your machine and is never committed. Each fact lives in one scope only; `/handover:tidy` finds repo-specific facts that ended up in the personal folder, and the reverse.
+
+**Never put secrets or personal data about other people in any of it.** The skills refuse to store passwords, keys, tokens, or credentials, and record where a secret lives instead; `/handover:tidy` flags any that slipped in.
 
 **Tidy.** Memory fails quietly as it grows: the same fact in three places, two files that contradict each other, a reversed decision that still loads, a `MEMORY.md` past the 200 lines that actually get loaded. `/handover:tidy` reads every layer at once, reports duplicates, contradictions, stale and misplaced entries, secrets, size problems, and broken rule frontmatter, and applies only the changes you approve. Contradictions are always left for you to decide.
 
@@ -94,6 +114,8 @@ After installing, restart Claude Code and run `/hooks` to check that the handove
 |---|---|---|
 | `threshold` | `0.7` | How full the context must be before a handover is offered |
 | `window` | `200000` | The model's context window in tokens. Set to `1000000` for 1M-context models |
+| `offer_resume` | on | At the start of a new session, offer to continue from a recent handover note |
+| `offer_when_done` | on | Offer a handover once, when Claude finishes the job after substantial work. Turn off with `HANDOVER_OFFER_WHEN_DONE=0` for one run |
 | `fresh_minutes` | `30` | How recent the note must be for auto-compaction to proceed without a pause |
 
 If you never configure them, the defaults apply. To override for a single session, use environment variables: `HANDOVER_THRESHOLD=0.5 claude`. `HANDOVER_WINDOW` and `HANDOVER_FRESH_MINUTES` work the same way.

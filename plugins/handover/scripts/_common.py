@@ -8,6 +8,7 @@ from pathlib import Path
 
 NOTE_PATH = ".claude/HANDOVER.md"
 KNOWLEDGE_INDEX = ".claude/knowledge/INDEX.md"
+OVERVIEW_PATH = ".claude/knowledge/overview.md"
 
 
 def setting_with_source(key: str, default: float):
@@ -32,6 +33,15 @@ def setting_with_source(key: str, default: float):
 
 def setting(key: str, default: float) -> float:
     return setting_with_source(key, default)[0]
+
+
+def flag(key: str, default: bool = True) -> bool:
+    """Read an on/off setting: HANDOVER_<KEY> env var, then the plugin option."""
+    for name in (f"HANDOVER_{key}", f"CLAUDE_PLUGIN_OPTION_{key}"):
+        value = os.environ.get(name)
+        if value is not None and value.strip() != "":
+            return value.strip().lower() not in ("0", "false", "no", "off")
+    return default
 
 
 def disabled() -> bool:
@@ -112,3 +122,8 @@ def read_bridge(session_id: str, transcript: str):
         return {"ratio": ratio, "tokens": int(tokens if tokens is not None else ratio * window), "window": window}
     except (OSError, ValueError, KeyError, TypeError):
         return None
+
+
+def personal_dir() -> Path:
+    """Knowledge that applies to all of the user's projects; lives outside any repository."""
+    return config_dir() / "handover" / "personal"
